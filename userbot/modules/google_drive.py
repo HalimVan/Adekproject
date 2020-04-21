@@ -170,8 +170,7 @@ async def generate_credentials(gdrive):
         creds = flow.credentials
         await asyncio.sleep(3.5)
         await gdrive.client.delete_messages(gdrive.chat_id, msg.id)
-        await gdrive.client.delete_messages(BOTLOG_CHATID, url_msg.id)
-        await gdrive.client.delete_messages(BOTLOG_CHATID, r.id)
+        await gdrive.client.delete_messages(BOTLOG_CHATID, [url_msg.id, r.id])
         """ - Unpack credential objects into strings - """
         creds = base64.b64encode(pickle.dumps(creds)).decode()
         await gdrive.edit("`Credentials created...`")
@@ -385,7 +384,7 @@ async def download_gdrive(gdrive, service, uri):
                         display_message = current_message
                     except Exception:
                         pass
-        reply += (
+        await gdrive.edit(
             "`[FILE - DOWNLOAD]`\n\n"
             f"`Name   :`\n`{file_name}`\n"
             f"`Size   :` `{humanbytes(file_size)}`\n"
@@ -405,8 +404,7 @@ async def download_gdrive(gdrive, service, uri):
         else:
             ans = r.message.message.strip()
             await gdrive.client.delete_messages(BOTLOG_CHATID, r.id)
-        await gdrive.client.delete_messages(gdrive.chat_id, msg.id)
-        await gdrive.client.delete_messages(BOTLOG_CHATID, ask.id)
+        await gdrive.client.delete_messages(gdrive.chat_id, [msg.id, ask.id])
     if ans.capitalize() == 'N':
         return reply
     elif ans.capitalize() == "Y":
@@ -561,7 +559,8 @@ async def task_directory(gdrive, service, folder_path):
         else:
             file_name = await get_raw_name(current_f_name)
             mimeType = await get_mimeType(current_f_name)
-            await upload(gdrive, service, current_f_name, file_name, mimeType)
+            asyncio.get_event_loop().create_task(upload(
+                gdrive, service, current_f_name, file_name, mimeType))
             root_parent_Id = parent_Id
     return root_parent_Id
 
